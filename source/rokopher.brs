@@ -92,6 +92,20 @@ Sub RunGridScreen(gridstyle, data, port)
         msgtype = type(msg)
 
         If msgtype = "roGridScreenEvent" Then
+
+            If msg.isListItemSelected() Then
+                categoryindex = msg.GetIndex()
+                itemindex = msg.GetData()
+                selecteditem = data.categories[categoryindex].items[itemindex]
+                For Each selectactionname In data.selectactions
+                    selectaction = selecteditem.rokopherActions[selectactionname]
+                    If selectaction <> invalid Then
+                        print "Activating the " + selectactionname + " action"
+                        ' TODO: Support method=POST
+                        Navigate(selectaction.url, port)
+                    End If
+                End For
+            End if
         End If
     End While
 
@@ -162,6 +176,7 @@ Sub HandleCategorizedList(elem, port)
     data.parenttitle = attr.parenttitle
     data.imagestyle = attr.imagestyle
     data.categories = []
+    data.selectactions = []
 
     categoryelems = elem.GetNamedElements("category")
     For Each categoryelem In categoryelems
@@ -169,6 +184,12 @@ Sub HandleCategorizedList(elem, port)
         category.title = categoryelem.GetAttributes().title
         category.items = ContentMetadataArrayFromXMLList(categoryelem.GetChildElements())
         data.categories.Push(category)
+    End For
+
+    selectactionelems = elem.GetNamedElements("selectaction")
+    For Each selectactionelem In selectactionelems
+        actionid = selectactionelem.GetAttributes().id
+        data.selectactions.Push(actionid)
     End For
 
     stylehandlerfunc(stylehandlertype, data, port)
@@ -203,7 +224,7 @@ Sub Main()
     screenFacade = CreateObject("roPosterScreen")
     screenFacade.show()
 
-    Navigate("http://192.168.4.8:8084/item.xml", port)
+    Navigate("http://192.168.4.8:8084/index.xml", port)
 
     screenFacade.ShowMessage("")
     sleep(25)
@@ -318,6 +339,26 @@ Sub ContentMetadataFromXML(elem) As Dynamic
     ret.Description = attr.description
     ret.ShortDescriptionLine1 = attr.shortdescription1
     ret.ShortDescriptionLine2 = attr.shortdescription2
+
+    ' Actions
+    ' These are not actually part of the Roku content metadata
+    ' definition, but are rather an extension used by rokopher
+    ' to represent the per-item action target information.
+    ret.rokopherActions = {}
+    For Each actionelem In elem.GetNamedElements("action")
+        actionattr = actionelem.GetAttributes()
+        actionid = actionattr.id
+        If actionid <> invalid Then
+            action = {
+                url: actionattr.url,
+                method: actionattr.method
+            }
+            If action.method = invalid Then action.method = "GET"
+            ret.rokopherActions[actionid] = action
+        Else
+            print "Ignoring action with no id attribute"
+        End If
+    End For
 
     ' Type-specific attributes
     If elemtype = "movie" Then
