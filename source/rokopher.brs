@@ -327,7 +327,12 @@ Sub RestrictedContentMetadataArrayFromXMLList(elems, allowednames) As Dynamic
 
     ret = []
     For Each elem in elems
-        ret.Push(ContentMetadataFromXML(elem))
+        elemname = elem.GetName()
+        If allowed[elemname] Then
+            ret.Push(ContentMetadataFromXML(elem))
+        Else
+            print "Skipping " + elemname + " element that can't represent an item here"
+        End If
     End For
     return ret
 
