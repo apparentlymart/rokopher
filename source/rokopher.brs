@@ -97,6 +97,36 @@ Sub RunGridScreen(gridstyle, data, port)
 
 End Sub
 
+Sub RunSpringboardScreen(data, port)
+
+    print "Preparing to show a springboard screen"
+
+    screen = CreateObject("roSpringboardScreen")
+    screen.SetContent(data.item)
+
+    If data.title <> invalid Then
+        If data.parenttitle <> invalid Then
+           screen.SetBreadcrumbText(data.parenttitle, data.title)
+        Else
+           screen.SetBreadcrumbText(data.title, "")
+        End If
+    End If
+
+    If data.imagestyle <> invalid Then screen.SetDisplayMode(data.imagestyle)
+
+    screen.SetMessagePort(port)
+    screen.Show()
+
+    While true
+        msg = wait(0, port)
+        msgtype = type(msg)
+
+        If msgtype = "roSpringboardScreenEvent" Then
+        End If
+    End While
+
+End Sub
+
 Sub HandleCategorizedList(elem, port)
 
     print "Preparing to show a categorized list"
@@ -150,13 +180,35 @@ Sub HandleCategorizedList(elem, port)
 
 End Sub
 
+Sub HandleItemDetail(elem, port)
+
+    print "Preparing to show an item detail"
+
+    attr = elem.GetAttributes()
+
+    data = {}
+    data.title = attr.title
+    data.parenttitle = attr.parenttitle
+    data.imagestyle = attr.imagestyle
+
+    itemelems = elem.GetNamedElements("item")
+    If itemelems.Count() > 0 Then
+        data.item = ContentMetadataFromXML(itemelems[0])
+    Else
+        data.item = {}
+    End If
+
+    RunSpringboardScreen(data, port)
+
+End Sub
+
 Sub Main()
 
     port = CreateObject("roMessagePort")
     screenFacade = CreateObject("roPosterScreen")
     screenFacade.show()
 
-    Navigate("http://192.168.4.8:8084/index.xml", port)
+    Navigate("http://192.168.4.8:8084/item.xml", port)
 
     screenFacade.ShowMessage("")
     sleep(25)
@@ -185,7 +237,8 @@ Sub RunScreenFromXML(elem, port)
     print "Running a screen of type " + screentype
 
     screentypes = {
-        categorizedlist: HandleCategorizedList
+        categorizedlist: HandleCategorizedList,
+        itemdetail: HandleItemDetail
     }
 
     handler = screentypes.Lookup(screentype)
