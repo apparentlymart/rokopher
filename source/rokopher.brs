@@ -260,15 +260,17 @@ Sub Navigate(url, port)
             status = msg.GetResponseCode()
             If status = 200 Then
                 xml = msg.GetString()
-                Exit While
+                dialog.Close()
             Else
                 ' TODO: Handle errors with a reasonable error in the UI
                 print "Response code is " + Str(status) + " " + msg.GetFailureReason()
             End If
+        Else If msgtype = "roOneLineDialogEvent"
+            If msg.IsScreenClosed() Then
+                Exit While
+            End If
         End If
     End While
-
-    dialog.Close()
 
     If elem.Parse(xml) Then
         RunScreenFromXML(elem, port)
