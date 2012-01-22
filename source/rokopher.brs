@@ -50,6 +50,19 @@ Sub RunPosterScreen(liststyle, data, port)
                 categoryindex = msg.GetIndex()
                 print "Selected category" + Str(categoryindex)
                 showitems(screen, data.categories[categoryindex].items)
+            Else if msg.IsListItemSelected() Then
+                itemindex = msg.GetIndex()
+                selecteditem = data.categories[categoryindex].items[itemindex]
+                For Each selectactionname In data.selectactions
+                    selectaction = selecteditem.rokopherActions[selectactionname]
+                    If selectaction <> invalid Then
+                        print "Activating the " + selectactionname + " action"
+                        ' TODO: Support method=POST
+                        Navigate(selectaction.url, port)
+                    End If
+                End For
+            Else If msg.isScreenClosed() Then
+               Exit While
             End If
         End If
     End While
@@ -136,6 +149,9 @@ Sub RunSpringboardScreen(data, port)
         msgtype = type(msg)
 
         If msgtype = "roSpringboardScreenEvent" Then
+           If msg.isScreenClosed() Then
+               Exit While
+           End If
         End If
     End While
 
