@@ -397,8 +397,6 @@ Sub ContentMetadataFromXML(elem) As Dynamic
     Else If elemtype = "song"
         ret.Album = attr.albumname
         ret.Artist = attr.artistname
-    Else If elemtype = "photo" or elemtype = "genericimage" Then
-        ret.Url = attr.fullsrc
     End If
 
     ' Type class attributes
@@ -412,6 +410,10 @@ Sub ContentMetadataFromXML(elem) As Dynamic
 
     If elemtype = "song" or elemtype = "genericaudio" Then
         ret.ContentType = "audio"
+    End If
+
+    If elemtype = "photo" or elemtype = "genericimage" Then
+        ret.Url = attr.fullsrc
     End If
 
     ' If the document doesn't provide specific values for the
