@@ -2,7 +2,7 @@
 all: rokopher
 
 rokopher: source/rokopher.brs
-	zip -9 -r rokopher.zip . -x \*~ -x Makefile -x \*.zip
+	zip -9 -r rokopher.zip . -x \*~ -x Makefile -x \*.zip -x \*.mp3
 
 clean:
 	rm rokopher.zip
