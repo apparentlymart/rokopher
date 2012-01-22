@@ -56,6 +56,47 @@ Sub RunPosterScreen(liststyle, data, port)
 
 End Sub
 
+Sub RunGridScreen(gridstyle, data, port)
+
+    print "Preparing to show a grid screen with style " + gridstyle
+
+    screen = CreateObject("roGridScreen")
+
+    If data.title <> invalid Then
+        If data.parenttitle <> invalid Then
+           screen.SetBreadcrumbText(data.parenttitle, data.title)
+        Else
+           screen.SetBreadcrumbText(data.title, "")
+        End If
+    End If
+
+    If data.imagestyle <> invalid Then screen.SetDisplayMode(data.imagestyle)
+
+    screen.SetGridStyle(gridstyle)
+
+    categorycount = data.categories.Count()
+    screen.SetupLists(categorycount)
+    listnames = []
+    For categoryidx = 0 to categorycount - 1
+        category = data.categories[categoryidx]
+        listnames.Push(category.title)
+        screen.SetContentList(categoryidx, category.items)
+    End For
+    screen.SetListNames(listnames)
+
+    screen.SetMessagePort(port)
+    screen.Show()
+
+    While true
+        msg = wait(0, port)
+        msgtype = type(msg)
+
+        If msgtype = "roGridScreenEvent" Then
+        End If
+    End While
+
+End Sub
+
 Sub HandleCategorizedList(elem, port)
 
     print "Preparing to show a categorized list"
@@ -76,6 +117,11 @@ Sub HandleCategorizedList(elem, port)
     styles["tree:flat-episodic"] = [ RunPosterScreen, "flat-episodic" ]
     styles["tree:flat-16x9"] = [ RunPosterScreen, "flat-16x9" ]
     styles["tree:flat-episodic-16x9"] = [ RunPosterScreen, "flat-episodic-16x9" ]
+    styles["grid:flat-movie"] = [ RunGridScreen, "flat-movie" ]
+    styles["grid:flat-portrait"] = [ RunGridScreen, "flat-portrait" ]
+    styles["grid:flat-landscape"] = [ RunGridScreen, "flat-landscape" ]
+    styles["grid:flat-square"] = [ RunGridScreen, "flat-square" ]
+    styles["grid:flat-16x9"] = [ RunGridScreen, "flat-16x9" ]
     stylehandler = styles.Lookup(stylename)
     If stylehandler = invalid then stylehandler = styles.Lookup("tree:arced-portrait")
     stylehandlerfunc = stylehandler[0]
