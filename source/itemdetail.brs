@@ -17,6 +17,18 @@ Sub HandleItemDetail(elem, port)
         data.item = {}
     End If
 
+    data.actionchoices = []
+    actionchoiceelems = elem.GetNamedElements("actionchoice")
+    For Each actionchoiceelem In actionchoiceelems
+        actionid = actionchoiceelem.GetAttributes().id
+        actioncaption = actionchoiceelem.GetAttributes().caption
+        actionchoice = {
+            id: actionid,
+            caption: actioncaption
+        }
+        data.actionchoices.Push(actionchoice)
+    End For
+
     RunSpringboardScreen(data, port)
 
 End Sub
@@ -38,6 +50,14 @@ Sub RunSpringboardScreen(data, port)
 
     If data.imagestyle <> invalid Then screen.SetDisplayMode(data.imagestyle)
 
+    For choiceidx = 0 to data.actionchoices.Count()-1
+        actionchoice = data.actionchoices[choiceidx]
+        selectaction = data.item.rokopherActions[actionchoice.id]
+        If selectaction <> invalid Then
+            screen.AddButton(choiceidx, actionchoice.caption)
+        End If
+    End For
+
     screen.SetMessagePort(port)
     screen.Show()
 
@@ -48,6 +68,13 @@ Sub RunSpringboardScreen(data, port)
         If msgtype = "roSpringboardScreenEvent" Then
            If msg.isScreenClosed() Then
                Exit While
+           Else If msg.isButtonPressed() Then
+               actionchoiceidx = msg.GetIndex()
+               actionchoice = data.actionchoices[actionchoiceidx]
+               action = data.item.rokopherActions[actionchoice.id]
+               ' print "Activating the " + action.id + " action"
+               ' TODO: Support method=POST
+               Navigate(action.url, port)
            End If
         End If
     End While
