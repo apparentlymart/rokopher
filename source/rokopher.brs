@@ -214,8 +214,41 @@ Sub Navigate(url, port)
     ua = CreateObject("roUrlTransfer")
     elem = CreateObject("roXMLElement")
     ua.SetUrl(url)
-    ' FIXME: Do this asynchronously with a loading screen
-    xml = ua.GetToString()
+    ua.SetPort(port)
+
+    dialog = CreateObject("roOneLineDialog")
+    dialog.SetMessagePort(port)
+    dialog.SetTitle("Retrieving...")
+    dialog.ShowBusyAnimation()
+    dialog.Show()
+
+    sent = ua.AsyncGetToString()
+    If not sent Then
+        ' FIXME: Fail in the UI
+        print "Failed to send HTTP request"
+        return
+    End If
+
+    xml = invalid
+
+    While true
+        msg = wait(0, port)
+        msgtype = type(msg)
+
+        If msgtype = "roUrlEvent" Then
+            status = msg.GetResponseCode()
+            If status = 200 Then
+                xml = msg.GetString()
+                Exit While
+            Else
+                ' TODO: Handle errors with a reasonable error in the UI
+                print "Response code is " + Str(status) + " " + msg.GetFailureReason()
+            End If
+        End If
+    End While
+
+    dialog.Close()
+
     print "Got XML " + xml
 
     If elem.Parse(xml) Then
