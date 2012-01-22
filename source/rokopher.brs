@@ -5,7 +5,7 @@ Sub Main()
     screenFacade = CreateObject("roPosterScreen")
     screenFacade.show()
 
-    Navigate("http://192.168.4.8:8084/index.xml", port)
+    Navigate("http://192.168.4.8:8084/audio.xml", port)
 
     screenFacade.ShowMessage("")
     sleep(25)
@@ -70,6 +70,7 @@ Sub RunScreenFromXML(elem, port)
         categorizedlist: HandleCategorizedList,
         itemdetail: HandleItemDetail,
         imageplaylist: HandleImagePlaylist
+        audioplaylist: HandleAudioPlaylist
     }
 
     handler = screentypes.Lookup(screentype)
@@ -179,6 +180,7 @@ Sub ContentMetadataFromXML(elem) As Dynamic
 
     If elemtype = "song" or elemtype = "genericaudio" Then
         ret.ContentType = "audio"
+        ret.Url = attr.src
     End If
 
     If elemtype = "photo" or elemtype = "genericimage" Then
