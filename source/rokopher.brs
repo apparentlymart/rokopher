@@ -167,12 +167,7 @@ Sub HandleCategorizedList(elem, port)
     For Each categoryelem In categoryelems
         category = {}
         category.title = categoryelem.GetAttributes().title
-        category.items = []
-        itemelems = categoryelem.GetNamedElements("item")
-        For Each itemelem In itemelems
-            item = ContentMetadataFromXML(itemelem)
-            category.items.Push(item)
-        End For
+        category.items = ContentMetadataArrayFromXMLList(categoryelem.GetChildElements())
         data.categories.Push(category)
     End For
 
@@ -191,9 +186,9 @@ Sub HandleItemDetail(elem, port)
     data.parenttitle = attr.parenttitle
     data.imagestyle = attr.imagestyle
 
-    itemelems = elem.GetNamedElements("item")
-    If itemelems.Count() > 0 Then
-        data.item = ContentMetadataFromXML(itemelems[0])
+    items = ContentMetadataArrayFromXMLList(elem.GetChildElements())
+    If items.Count() > 0 Then
+        data.item = items[0]
     Else
         data.item = {}
     End If
@@ -253,23 +248,82 @@ Sub RunScreenFromXML(elem, port)
 
 End Sub
 
+Sub RestrictedContentMetadataArrayFromXMLList(elems, allowednames) As Dynamic
+
+    allowed = {}
+    For Each name in allowednames
+        allowed[name] = true
+    End For
+
+    ret = []
+    For Each elem in elems
+        ret.Push(ContentMetadataFromXML(elem))
+    End For
+    return ret
+
+End Sub
+
+Sub ContentMetadataArrayFromXMLList(elems) As Dynamic
+    Return RestrictedContentMetadataArrayFromXMLList(elems, [
+        "movie",
+        "episode", "season", "series",
+        "song", "songalbum",
+        "photo", "photoalbum",
+        "genericitem", "genericvideo", "livevideo", "genericaudio", "genericimage"
+    ])
+End Sub
+
 Sub ContentMetadataFromXML(elem) As Dynamic
 
     attr = elem.GetAttributes()
+    elemtype = elem.GetName()
 
     ret = {}
 
-    ret.ContentType = attr.contenttype
+    ' Attributes common to all types
     ret.Title = attr.title
-    ret.TitleSeason = attr.seasontitle
+    ret.HDPosterUrl = attr.hdposterurl
+    ret.SDPosterUrl = attr.sdposterurl
     ret.Description = attr.description
     ret.ShortDescriptionLine1 = attr.shortdescription1
     ret.ShortDescriptionLine2 = attr.shortdescription2
-    ret.HDPosterUrl = attr.hdpostersrc
 
-    'If ret.ShortDescriptionLine1 == invalid Then
-    '    ret.ShortDescriptionLine1 = ret.Title
-    'End If
+    ' Type-specific attributes
+    If elemtype = "movie" Then
+        ret.ContentType = "movie"
+    Else If elemtype = "episode" Then
+        ret.ContentType = "episode"
+        ret.TitleSeason = attr.seasontitle
+    Else If elemtype = "season" Then
+        ret.ContentType = "season"
+        ret.TitleSeason = attr.seriestitle
+    Else If elemtype = "series" Then
+        ret.ContentType = "series"
+    Else If elemtype = "song"
+        ret.Album = attr.albumname
+        ret.Artist = attr.artistname
+    Else If elemtype = "photo" or elemtype = "genericimage" Then
+        ret.Url = attr.fullsrc
+    End If
+
+    ' Type class attributes
+    If elemtype = "movie" or elemtype = "episode" or elemtype = "genericvideo" Then
+        ' TODO: Decode "stream" child elements, BIF URL, subtitles URL...
+    End If
+    If elemtype = "livevideo" Then
+        ' TODO: Decode "stream" child elements in the special way that
+        ' is different for HTTP Live Streaming.
+    End If
+
+    If elemtype = "song" or elemtype = "genericaudio" Then
+        ret.ContentType = "audio"
+    End If
+
+    ' If the document doesn't provide specific values for the
+    ' short description line 1 then substitute the title.
+    If ret.ShortDescriptionLine1 = invalid Then
+        ret.ShortDescriptionLine1 = ret.Title
+    End If
 
     Return ret
 
