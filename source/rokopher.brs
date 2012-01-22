@@ -249,8 +249,6 @@ Sub Navigate(url, port)
 
     dialog.Close()
 
-    print "Got XML " + xml
-
     If elem.Parse(xml) Then
         RunScreenFromXML(elem, port)
     Else
