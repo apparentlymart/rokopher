@@ -71,7 +71,8 @@ Sub RunScreenFromXML(elem, port)
         itemdetail: HandleItemDetail,
         imageplaylist: HandleImagePlaylist,
         audioplaylist: HandleAudioPlaylist,
-        videoplaylist: HandleVideoPlaylist
+        videoplaylist: HandleVideoPlaylist,
+        textview: HandleTextView
     }
 
     handler = screentypes.Lookup(screentype)
