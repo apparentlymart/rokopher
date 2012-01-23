@@ -40,6 +40,41 @@ Sub HandleTextView(elem, port)
 
 End Sub
 
+Sub HandleError(error, port)
+
+    data = {}
+    data.title = error.title
+    data.bodyitems = []
+    If data.title = invalid Then data.title = "Error"
+
+    print "Handling error titled " + data.title
+
+    If error.heading <> invalid Then
+        print "Error heading is " + error.heading
+        data.bodyitems.Push({
+            kind: "head",
+            text: error.heading
+        })
+    End If
+
+    If error.detail <> invalid Then
+        data.bodyitems.Push({
+            kind: "para",
+            text: error.detail
+        })
+    End If
+
+    If error.url <> invalid Then
+        data.bodyitems.Push({
+            kind: "para",
+            text: error.url
+        })
+    End If
+
+    RunParagraphScreen(data, port)
+
+End Sub
+
 Sub RunParagraphScreen(data, port)
 
     print "Preparing to show a paragraph screen for a text view"

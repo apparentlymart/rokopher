@@ -5,7 +5,7 @@ Sub Main()
     screenFacade = CreateObject("roPosterScreen")
     screenFacade.show()
 
-    Navigate("http://192.168.4.8:8084/audio.xml", port)
+    Navigate("http://192.168.4.8:8084/index.xml", port)
 
     screenFacade.ShowMessage("")
     sleep(25)
@@ -18,20 +18,27 @@ Sub Navigate(url, port)
     ua.SetUrl(url)
     ua.SetPort(port)
 
+    sent = ua.AsyncGetToString()
+    If not sent Then
+        ' FIXME: Fail in the UI
+        print "Failed to send HTTP request"
+        HandleError({
+            title: "Error Retrieving Document",
+            heading: "Unable to Retrieve Document",
+            detail: "Failed to start network request.",
+            url: url
+        }, port)
+        return
+    End If
+
     dialog = CreateObject("roOneLineDialog")
     dialog.SetMessagePort(port)
     dialog.SetTitle("Retrieving...")
     dialog.ShowBusyAnimation()
     dialog.Show()
 
-    sent = ua.AsyncGetToString()
-    If not sent Then
-        ' FIXME: Fail in the UI
-        print "Failed to send HTTP request"
-        return
-    End If
-
     xml = invalid
+    errormsg = invalid
 
     While true
         msg = wait(0, port)
@@ -39,12 +46,13 @@ Sub Navigate(url, port)
 
         If msgtype = "roUrlEvent" Then
             status = msg.GetResponseCode()
+            dialog.Close()
             If status = 200 Then
                 xml = msg.GetString()
-                dialog.Close()
             Else
-                ' TODO: Handle errors with a reasonable error in the UI
                 print "Response code is " + Str(status) + " " + msg.GetFailureReason()
+                errormsg = msg.GetFailureReason()
+                If errormsg = invalid Then errormsg = "Unknown error"
             End If
         Else If msgtype = "roOneLineDialogEvent"
             If msg.IsScreenClosed() Then
@@ -53,11 +61,27 @@ Sub Navigate(url, port)
         End If
     End While
 
-    If elem.Parse(xml) Then
+    If errormsg <> invalid Then
+        HandleError({
+            title: "Error Retrieving Document",
+            heading: "Unable to Retrieve Document",
+            detail: errormsg,
+            url: url
+        }, port)
+        return
+    End If
+
+    If xml <> invalid and elem.Parse(xml) Then
         RunScreenFromXML(elem, port)
     Else
         ' FIXME: Display a reasonable error in the UI
         print "XML parse error"
+        HandleError({
+            title: "Content Error",
+            heading: "Invalid Document",
+            detail: "Document is not well-formed XML.",
+            url: url
+        }, port)
     End If
 End Sub
 
@@ -81,8 +105,11 @@ Sub RunScreenFromXML(elem, port)
         print "Running " + screentype + " handler"
         handler(elem, port)
     Else
-        ' FIXME: Display a reasonable error in the UI
-        print "No handler for screen type " + screentype
+        HandleError({
+            title: "Content Error",
+            heading: "Unsupported Document Type",
+            detail: "Can't render this document of type '" + screentype + "'"
+        }, port)
     End If
 
 End Sub
