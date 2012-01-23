@@ -69,8 +69,9 @@ Sub RunScreenFromXML(elem, port)
     screentypes = {
         categorizedlist: HandleCategorizedList,
         itemdetail: HandleItemDetail,
-        imageplaylist: HandleImagePlaylist
-        audioplaylist: HandleAudioPlaylist
+        imageplaylist: HandleImagePlaylist,
+        audioplaylist: HandleAudioPlaylist,
+        videoplaylist: HandleVideoPlaylist
     }
 
     handler = screentypes.Lookup(screentype)
@@ -171,7 +172,21 @@ Sub ContentMetadataFromXML(elem) As Dynamic
 
     ' Type class attributes
     If elemtype = "movie" or elemtype = "episode" or elemtype = "genericvideo" Then
-        ' TODO: Decode "stream" child elements, BIF URL, subtitles URL...
+        ret.StreamFormat = attr.streamformat
+        ' it's required to use "livevideo" for HLS
+        If ret.StreamFormat = "hls" Then ret.StreamFormat = invalid
+        streamelems = elem.GetNamedElements("stream")
+        streams = []
+        For Each streamelem In streamelems
+            streamattr = streamelem.GetAttributes()
+            stream = {}
+            stream.bitrate = streamattr.bitrate
+            stream.url = streamattr.url
+            If stream.quality = "HD" Then stream.quality = true
+            streams.Push(stream)
+        End For
+        ret.Streams = streams
+        ' TODO: BIF URL, subtitles URL...
     End If
     If elemtype = "livevideo" Then
         ' TODO: Decode "stream" child elements in the special way that
